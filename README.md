@@ -1,6 +1,6 @@
 Simulación de la trayectoria de Artemis II.
 
-== Cómo usar.
+## Cómo usar.
 
 Con una instalación de `python`, `python main.py` lanza una ventana interactiva de matplotlib que muestra la trayectoria de la nave simulada comparada con la real.
 
@@ -15,7 +15,7 @@ En azul se muestra la trayectoria "real", de referencia, tomada de datos reales 
 
 Los puntos azules y naranjas son isócronas de ambas simulaciones. También debería haber una animación mostrando ambas 
 
-== Parámetros
+## Parámetros
 
 La UI tiene sliders que permiten cambiar los parámetros de la trayectoria
 
@@ -31,7 +31,7 @@ Los parámetros por defecto son los que encontré que mejor se ajustan a la tray
 
 Probé varias maneras de encontrar las características del impulso real, pero al final lo que funcionó mejor fue ajustarlos manualemente. Por eso, aunque la trayectoria que encontré yo es muy parecida a la real, no creo que sea la misma; es posible que la nave en realidad haya tenido otro impulso inicial en un momento ligeramente distinto que le dio una trayectoria similar.
 
-== Estructura
+## Estructura
 
 - `simulation.py` contiene el código de la simulación y el integrador numérico propiamente dicho.
 - `parse_horizon.py` parsea los datos de entrada que fueron exportados desde la NASA acá: https://ssd.jpl.nasa.gov/horizons/app.html
@@ -42,7 +42,7 @@ Probé varias maneras de encontrar las características del impulso real, pero a
 
 metodo de integracion: DOP853
 
-== Transparencia
+## Transparencia
 
 Bastante del código inicial fue hecho con asistencia de ChatGPT. Este es el diálogo completo que tuve: https://chatgpt.com/share/69e3f297-11a4-83e9-b1ac-566a3ebc1b04
 
