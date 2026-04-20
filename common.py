@@ -38,7 +38,7 @@ ATMOS_HEIGHT = DISTANCE_FACTOR * 6478
 BURN_1 = parse("2026-04-02T23:55:00Z").timestamp()
 
 # los parametros que encontre yo
-p0 = (BURN_1, 600, 9.6512, -3.74, 0, 1.26e-10)
+p0 = (BURN_1, 600, 9.65120184 * 1.26e-10 * 600 / 2, -3.74 * 1.26e-10 * 600 / 2, 0)
 # Acá configuro el sistema de coordenadas para los sliders.
 # velocidad de referencia de la nave en el punto del burn
 # gracias kerbal space program

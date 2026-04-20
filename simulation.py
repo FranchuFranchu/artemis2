@@ -46,8 +46,8 @@ def nbody_equations(t, y, masses, burns, **kwargs):
 
     accelerations /= VELOCITY_FACTOR
 
-    for tt, duration, direction, intensity in burns:
-        accelerations[0] += smooth_window(t, tt - duration / 2, tt + duration / 2) * direction * intensity
+    for tt, duration, direction in burns:
+        accelerations[0] += smooth_window(t, tt - duration / 2, tt + duration / 2) * direction
 
     # lo que hacemos acá es asegurarnos que el origen de coordenadas sea el cuerpo 0, que es Artemis
     accelerations[1:] -= accelerations[0]
@@ -63,8 +63,8 @@ def integrate_system(y0, t_eval, **kwargs):
         t_span=(np.min(t_eval), np.max(t_eval)),
         y0=y0,
         method="DOP853",
-        rtol=1e-9,
-        atol=1e-12,
+        rtol=RTOL,
+        atol=ATOL,
         dense_output=False,
         t_eval=t_eval,
     )

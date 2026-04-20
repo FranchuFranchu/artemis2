@@ -12,10 +12,8 @@ import numpy as np
 from dateutil.parser import parse
 from scipy.signal import savgol_filter
 from main_mpl import main_mpl
-from main_ipy import main_ipy
 
 DATOS = {}
-
 for i in NOMBRES:
     DATOS[i] = horizons_vector_to_dataframe(f"horizon-{i}.txt")
 

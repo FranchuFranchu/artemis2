@@ -11,6 +11,7 @@ from pprint import pprint
 import numpy as np
 from dateutil.parser import parse
 from scipy.signal import savgol_filter
+from datetime import datetime
 
 
 def main_mpl(time_range, horizon_data):
@@ -33,6 +34,7 @@ def main_mpl(time_range, horizon_data):
     # Simulation line (empty initially)
     line_sim, = ax.plot([], [], "--", color="tab:orange")
     dots_sim, = ax.plot([], [], "o", color="tab:orange")
+    dot_burn, = ax.plot([], [], "o", color="tab:red", label="Maniobra")
 
     # Moving points
     point_ref, = ax.plot([], [], "o", label="Referencia",color="tab:blue")
@@ -48,32 +50,40 @@ def main_mpl(time_range, horizon_data):
     ax.set_ylim(-0.2, 0.05)
 
     # Error text
-    text = ax.text(0.02, 0.90, "", transform=ax.transAxes)
+    text = ax.text(0.02, 0.70, "", transform=ax.transAxes)
 
     # ---- sliders ----
     sliders = []
     labels = ["tiempo", "duración", "prógrada", "radial", "normal", "intensidad"]
 
     def r(p0):
-        return sorted([p0 * 0.99, p0 * 1.005])
+        delta = p0 * 1e-2
+        return sorted([p0 - delta, p0 + delta])
 
     ranges = [
-        (p0[0] - 60 * 5, p0[0] + 60 * 5),
+        (p0[0] - 60 * 30, p0[0] + 60 * 30),
         (0, 1000),
         r(p0[2]),
-        (-10, 10),
-        (-10, 10),
-        (0, 1e-9)
+        (-1e-6, 1e-6),
+        (-1e-6, 1e-6),
     ]
 
-    for i, fmt in zip(range(6), ['%d s','%.3g s','%.3g','%.3g','%.3g','%.3g  Tm/s^2',]):
-        print(i, fmt)
-        ax_s = plt.axes([0.1, 0.35 - i*0.05, 0.8, 0.03])
-        slider = Slider(ax_s, labels[i], ranges[i][0], ranges[i][1], valinit=p0[i], valfmt=fmt)
+    fmt_funcs = (
+        lambda i: f'{datetime.fromtimestamp(i)}',
+        lambda i: f'{i} s',
+        lambda i: f'{i / DISTANCE_FACTOR * 1000} m/s',
+        lambda i: f'{i / DISTANCE_FACTOR * 1000} m/s',
+        lambda i: f'{i / DISTANCE_FACTOR * 1000} m/s',
+    )
+    for i in range(5):
+        ax_s = plt.axes([0.1, 0.35 - i*0.05, 0.6, 0.03])
+        slider = Slider(ax_s, labels[i], ranges[i][0], ranges[i][1], valinit=p0[i])
         sliders.append(slider)
 
     # ---- update function ----
     def update(_):
+        for s, f in zip(sliders, fmt_funcs):
+            s.valtext.set_text(f(s.val))
         params = np.array([s.val for s in sliders])
 
         # run simulation
@@ -83,17 +93,22 @@ def main_mpl(time_range, horizon_data):
             burns=[
                 (params[0],
                 params[1],
-                B @ np.array(params[2:5]),
-                params[5]),
-            ]
+                # convertir a aceleraciom maxima
+                2 * B @ np.array(params[2:5]) / params[1],
+                )]
         )
 
+        deltav = np.linalg.norm(B @ np.array(params[2:5]))  / DISTANCE_FACTOR * 1000
         traj_sim = -sim[:, :, 1]
         sim_cache["traj"] = traj_sim
 
         # update plot
         line_sim.set_data(traj_sim[:, 1], traj_sim[:, 0])
+
         dots_sim.set_data(traj_sim[:, 1][selected_times], traj_sim[:, 0][selected_times])
+
+        burn_time = np.searchsorted(time_out, params[0])
+        dot_burn.set_data([traj_sim[:, 1][burn_time]], [traj_sim[:, 0][burn_time]])
 
         heights = np.linalg.norm(sim[mid:, 0:3, 1], axis=1)
         arg = np.argmin(np.maximum(heights - min_height, 0))
@@ -101,7 +116,7 @@ def main_mpl(time_range, horizon_data):
         sim_min_time = time_out[mid+arg]
         delta_h = (heights - min_height)[arg]
 
-        text.set_text(f"{delta_h / DISTANCE_FACTOR:.0f}km\n$\\Delta$T:{(sim_min_time - h_time)/60:.2f} min")
+        text.set_text(f"Llegada a la tierra:\nΔH =     {delta_h / DISTANCE_FACTOR:.0f}km\nΔT =     {(sim_min_time - h_time)/60:.2f} min\nManiobra:\nΔV =    {deltav:.2f} m/s\nΔV real =    {388} m/s ")
 
         fig.canvas.draw_idle()
 
@@ -109,6 +124,8 @@ def main_mpl(time_range, horizon_data):
     for s in sliders:
         s.on_changed(update)
 
+    for s, f in zip(sliders, fmt_funcs):
+        s.valtext.set_text(f(s.val))
     # ---- reset button ----
     reset_ax = plt.axes([0.8, 0.05, 0.1, 0.04])
     button = Button(reset_ax, "Reset")
@@ -138,9 +155,9 @@ def main_mpl(time_range, horizon_data):
         point_sim.set_data([traj_sim[i,1]], [traj_sim[i,0]])
         point_mun.set_data([traj_moon[i,1]], [traj_moon[i,0]])
 
-        frame_idx["i"] += len(traj_ref) // 200
+        frame_idx["i"] += len(traj_ref) // FRAME_COUNT
 
-    ani = FuncAnimation(fig, animate, interval=30)
+    ani = FuncAnimation(fig, animate, interval=ANIM_INTERVAL)
     ani.event_source.start()
 
     button.on_clicked(reset)
